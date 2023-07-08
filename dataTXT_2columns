@@ -1,1 +1,64 @@
+import csv
+import pandas as pd
+import openpyxl
+import os
 
+def generate_csv_from_txt(txt_file):
+    # Wczytaj dane z pliku tekstowego z kodowaniem UTF-8
+    with open(txt_file, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+
+    data = []
+    for line in lines:
+        line = line.strip()  # Usuń białe znaki z początku i końca linii
+        if "-" in line:
+            parts = line.split("-")
+            first_column = parts[0].strip()
+            second_column = parts[1].strip()
+            data.append((first_column, second_column))
+
+    # Utwórz podfolder "kopia_csv" w tym samym katalogu co plik wsadowy
+    folder_path = os.path.join(os.path.dirname(txt_file), "kopia_csv")
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
+    # Zapisz dane do pliku CSV z polskimi znakami w podfolderze "kopia_csv"
+    csv_file = os.path.join(folder_path, os.path.basename(txt_file).replace(".txt", ".csv"))
+    with open(csv_file, 'w', newline='', encoding='utf-8-sig') as file:
+        writer = csv.writer(file, delimiter=';')
+        writer.writerows(data)
+
+    print("Dane zostały zapisane do pliku CSV:", csv_file)
+
+    return csv_file
+
+def convert_csv_to_excel(csv_file, excel_file):
+    # Wczytaj dane z pliku CSV przy użyciu pandas
+    df = pd.read_csv(csv_file, delimiter=';')
+
+    # Otwórz plik Excel przy użyciu openpyxl
+    workbook = openpyxl.load_workbook(excel_file)
+
+    # Utwórz nowy arkusz o nazwie takiej jak nazwa pliku wsadowego
+    sheet_name = os.path.splitext(os.path.basename(csv_file))[0]
+    sheet = workbook.create_sheet(title=sheet_name)
+
+    # Wstaw dane do arkusza
+    for _, row in df.iterrows():
+        sheet.append(row.tolist())
+
+    # Zapisz plik Excel
+    workbook.save(excel_file)
+    print("Dane zostały dodane do pliku Excel.")
+
+# Zapytaj użytkownika o ścieżkę pliku wsadowego
+txt_file = input("Podaj ścieżkę pliku wsadowego (txt): ")
+
+# Generuj plik CSV z pliku tekstowego
+csv_file = generate_csv_from_txt(txt_file)
+
+# Zapytaj użytkownika o ścieżkę pliku Excel
+excel_file = input("Podaj ścieżkę pliku Excel: ")
+
+# Konwertuj plik CSV do formatu Excel
+convert_csv_to_excel(csv_file, excel_file)
